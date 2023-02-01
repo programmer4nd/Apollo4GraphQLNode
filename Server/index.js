@@ -1,17 +1,20 @@
 // import { ApolloServer } from '@apollo/server';
 // import { startStandaloneServer } from '@apollo/server/standalone';
-const express = require('express');
+//const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
-const app = express();
+//const app = express();
 const http = require('http');
 const path = require('path');
-app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+//const { FileUpload //GraphQLUpload,// graphqlUploadExpress, // A Koa implementation is also exported
+//} = require('graphql-upload');
+//const { GraphQLUpload } = require('graphql-upload');
+// app.use(function (req, res, next) {
+//     res.header("Access-Control-Allow-Origin", "*");
+//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+//     next();
+// });
+//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 //app.use(express.static(path.join(__dirname, '/')));
 const books = [
     {
@@ -41,8 +44,11 @@ const typeDefs = `#graphql
   type Query {
     books: [Book]
   }
+  type Result{
+    Message:String
+  }
   type Mutation {
-    UploadFile(_File:Upload): String
+    UploadFile(_File:Upload): Result
   }
 `;
 
@@ -59,7 +65,7 @@ const uploadFile = async function (file) {
         let { ext, name } = path.parse(filename);
         let _fileName = `${Date.now()}${ext}`;
         let serverFile = path.join(
-            __dirname, `../${_fileName}`
+            __dirname, `../uploads/${_fileName}`
         );
         serverFile = serverFile.replace(' ', '_');
         let writeStream = await fs.createWriteStream(serverFile);
@@ -83,13 +89,13 @@ const resolvers = {
             console.log({ _File });
             if (_File) {
                 try {
-                    let _fileName = await uploadFile(_File);
-                    return _fileName;
-                } catch (ex) { console.log("ex"); }
+                    let _fileName = "sasa";//await uploadFile(_File);
+                    return { Message: _fileName };
+                } catch (ex) { console.log("ex"); throw ex }
 
             }
 
-            return "ABC";
+            return { Message: "hhf" };
         }
     }
 };
@@ -98,6 +104,11 @@ const resolvers = {
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
 const server = new ApolloServer({
+    cors: {
+        origin: '*',			// <- allow request from all domains
+        credentials: true
+    },
+    csrfPrevention: false,
     typeDefs,
     resolvers,
 });
@@ -105,14 +116,14 @@ const server = new ApolloServer({
 //     app,
 //     path: '/graphql'
 // });
-app.use(
-    '/graphql',
-    // cors({ origin: ['https://www.your-app.example', 'https://studio.apollographql.com'] }),
-    //json(),
-    expressMiddleware(server),
-);
+//app.use(
+//'/graphql',
+// cors({ origin: ['https://www.your-app.example', 'https://studio.apollographql.com'] }),
+//json(),
+//expressMiddleware(server),
+//);
 
-const httpServer = http.createServer(app);
+//const httpServer = http.createServer(app);
 //server.installSubscriptionHandlers(httpServer);
 
 // httpServer.listen(4100, () => {

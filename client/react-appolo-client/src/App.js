@@ -12,10 +12,19 @@ query books {
 } 
 `;
 const UPLOAD_IMAGE = gql`
-mutation UploadFile ($_File:Upload){
-  UploadFile(_File:$_File) 
+mutation UploadFile($_File:Upload){
+  UploadFile(_File:$_File){
+    Message
+  }
 } 
 `;
+const RESET_PASSWORD = gql`
+  mutation resetPassword($UserName:String,$NewPassword:String,$code:String){
+    resetPassword(UserName:$UserName,NewPassword:$NewPassword,code:$code){
+      Result
+    }
+  }
+  `;
 function DisplayData() {
   const { loading, error, data } = useQuery(GET_DATA);
 
@@ -46,14 +55,15 @@ function App() {
     onError: ({ error }) => {
       console.log(error)
     },
-    onCompleted: ({ UploadFile }) => {
-      setImagePath(UploadFile);
-      console.log(UploadFile);
-    },
+    // onCompleted: ({ UploadFile }) => {
+    //   setImagePath(UploadFile.Message);
+    //   console.log(UploadFile);
+    // },
   });
   const handleUploadClick = () => {
     // 👇 We redirect the click event onto the hidden input element
     //inputRef.current?.click();
+    console.log("dsdad");
     upLoadFile();
   };
 
@@ -74,7 +84,7 @@ function App() {
           onChange={handleFileChange}
           style={{ display: 'block' }}
         />
-        {File && <button onClick={(e) => handleUploadClick()}>Upload</button>}
+        {<button onClick={(e) => handleUploadClick()}>Upload</button>}
       </div>
       <DisplayData />
       <div>

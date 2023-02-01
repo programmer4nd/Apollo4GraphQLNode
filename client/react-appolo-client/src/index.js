@@ -17,13 +17,21 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       authorization: "",
+      //'Apollo-Require-Preflight': 'true'
     }
   }
 });
+// const client = new ApolloClient({
+//   uri: 'http://localhost:4000/graphql',
+//   cache: new InMemoryCache(),
+//   link: authLink.concat(httpLink),
+// });
 const client = new ApolloClient({
-  uri: 'http://localhost:4100/graphql',
   cache: new InMemoryCache(),
-  link: authLink.concat(httpLink),
+  link: authLink.concat(httpLink),//ApolloLink.from([httpLink]),
+  fetchOptions: {
+    mode: "no-cors",
+  },
 });
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
