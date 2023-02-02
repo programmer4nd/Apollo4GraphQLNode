@@ -4,7 +4,10 @@
 const { ApolloServer } = require('@apollo/server');
 const { startStandaloneServer } = require('@apollo/server/standalone');
 //const app = express();
+const fs = require('fs');
+const { finished } = require('stream/promises');
 const http = require('http');
+const {graphqlUploadExpress,GraphQlUpload}=require('graphql-upload-minimal');
 const path = require('path');
 //const { FileUpload //GraphQLUpload,// graphqlUploadExpress, // A Koa implementation is also exported
 //} = require('graphql-upload');
@@ -37,7 +40,7 @@ const typeDefs = `#graphql
     title: String
     author: String
   }
-  scalar Upload
+  scalar GraphQLUpload
   # The "Query" type is special: it lists all of the available queries that
   # clients can execute, along with the return type for each. In this
   # case, the "books" query returns an array of zero or more Books (defined above).
@@ -48,7 +51,7 @@ const typeDefs = `#graphql
     Message:String
   }
   type Mutation {
-    UploadFile(_File:Upload): Result
+    UploadFile(_File:GraphQLUpload): Result
   }
 `;
 
@@ -89,7 +92,7 @@ const resolvers = {
             console.log({ _File });
             if (_File) {
                 try {
-                    let _fileName = "sasa";//await uploadFile(_File);
+                    let _fileName = await uploadFile(_File.file);
                     return { Message: _fileName };
                 } catch (ex) { console.log("ex"); throw ex }
 
@@ -103,15 +106,17 @@ const resolvers = {
 
 // The ApolloServer constructor requires two parameters: your schema
 // definition and your set of resolvers.
-const server = new ApolloServer({
+const server = new ApolloServer({ 
     cors: {
         origin: '*',			// <- allow request from all domains
         credentials: true
     },
     csrfPrevention: false,
     typeDefs,
-    resolvers,
-});
+    resolvers
+    ,plugins:[graphqlUploadExpress()]
+  //  graphqlUploadExpress()
+},graphqlUploadExpress());
 // server.applyMiddleware({
 //     app,
 //     path: '/graphql'
