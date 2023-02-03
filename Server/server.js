@@ -1,29 +1,29 @@
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
-const { expressMiddleware }  = require('@apollo/server/express4'); 
+const { expressMiddleware } = require('@apollo/server/express4');
 const path = require('path');
-const cors =require('cors');
-const { json } =require('body-parser');
+const cors = require('cors');
+const { json } = require('body-parser');
 const app = express();
 const fs = require('fs');
 const { finished } = require('stream/promises');
 const http = require('http');
-const {graphqlUploadExpress}=require('graphql-upload-minimal');
+const { graphqlUploadExpress } = require('graphql-upload-minimal');
 app.use(function (req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-  });
-  app.use(graphqlUploadExpress());
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+app.use(graphqlUploadExpress());
 const books = [
-    {
-        title: 'The Awakening',
-        author: 'Kate Chopin',
-    },
-    {
-        title: 'City of Glass',
-        author: 'Paul Auster',
-    },
+  {
+    title: 'The Awakening',
+    author: 'Kate Chopin',
+  },
+  {
+    title: 'City of Glass',
+    author: 'Paul Auster',
+  },
 ]
 // A schema is a collection of type definitions (hence "typeDefs")
 // that together define the "shape" of queries that are executed against
@@ -52,84 +52,85 @@ const typeDefs = `#graphql
 `;
 //upload file function to write file to disk
 const uploadFile = async function (file) {
-    try {
-         
-        const {
-            createReadStream,
-            filename,
-            mimetype
-        } = await file;
+  try {
 
-        let stream = await createReadStream();
-        let { ext, name } = path.parse(filename);
-        let _fileName = `${Date.now()}${ext}`;
-        let serverFile = path.join(
-            __dirname, `./${_fileName}`
-        );
-        serverFile = serverFile.replace(' ', '_');
-        let writeStream = await fs.createWriteStream(serverFile);
-        await stream.pipe(writeStream);
-        await finished(writeStream);
-        return _fileName;
-    } catch (err) {
-        console.log(err);
-        throw err;
-    }
+    const {
+      createReadStream,
+      filename,
+      mimetype
+    } = await file;
+
+    let stream = await createReadStream();
+    let { ext, name } = path.parse(filename);
+    let _fileName = `${Date.now()}${ext}`;
+    let serverFile = path.join(
+      __dirname, `./${_fileName}`
+    );
+    serverFile = serverFile.replace(' ', '_');
+    let writeStream = await fs.createWriteStream(serverFile);
+    await stream.pipe(writeStream);
+    await finished(writeStream);
+    return _fileName;
+  } catch (err) {
+    console.log(err);
+    throw err;
+  }
 
 };
 // Resolvers define how to fetch the types defined in your schema.
 // This resolver retrieves books from the "books" array above.
 const resolvers = {
-    Query: {
-        books: () => books,
-    },
-    Mutation: {
-        UploadFile: async (root, { _File }, req) => {
-            console.log( _File );
-            if (_File) {
-                try {
-                    let _fileName = await uploadFile(_File.file);
-                    return { Message: _fileName };
-                } catch (ex) { console.log(ex); throw ex }
-            } 
-            return { Message: "some error occured" };
-        }
+  Query: {
+    books: () => books,
+  },
+  Mutation: {
+    UploadFile: async (root, { _File }, req) => {
+      console.log(_File);
+      if (_File) {
+        try {
+          let _fileName = await uploadFile(_File.file);
+          return { Message: _fileName };
+        } catch (ex) { console.log(ex); throw ex }
+      }
+      return { Message: "some error occured" };
     }
+  }
 };
 
 app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
-}); 
-const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    cors: {
-        origin: '*',			// <- allow request from all domains
-        credentials: true
-    },
-    csrfPrevention: false,
 });
- 
- server.start().then(res => {
-app.use(
-  '/graphql',
-  cors({origin:"*"}),
-  json(),
-  expressMiddleware(server, {}),
-);
+app.use(express.static(path.join(__dirname, '/')));
+const server = new ApolloServer({
+  typeDefs,
+  resolvers,
+  cors: {
+    origin: '*',			// <- allow request from all domains
+    credentials: true
+  },
+  csrfPrevention: false,
+});
 
-const httpServer = http.createServer(app);
-//server.installSubscriptionHandlers(httpServer);
+server.start().then(res => {
+  app.use(
+    '/graphql',
+    cors({ origin: "*" }),
+    json(),
+    expressMiddleware(server, {}),
+  );
 
-//await new Promise((resolve) =>
-httpServer.listen(4100, () => {
-  console.log("🚀 Server is good to go @  4100/graphql");
-}); 
+  const httpServer = http.createServer(app);
+  //server.installSubscriptionHandlers(httpServer);
 
-}); 
+  //await new Promise((resolve) =>
+  httpServer.listen(4100, () => {
+    console.log("🚀 Server is good to go @  4100/graphql");
+  });
+
+});
 
 
 
- 
+
