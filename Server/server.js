@@ -1,21 +1,14 @@
-//const {  gql } = require('graphql-tag');
-//const { PubSub  } = require('graphql-subscriptions');
 const express = require('express');
 const { ApolloServer } = require('@apollo/server');
-const { expressMiddleware }  = require('@apollo/server/express4');
-//const schema = require('./Graphql/schema');
-//const auth = require('./Middleware/auth.js');
+const { expressMiddleware }  = require('@apollo/server/express4'); 
 const path = require('path');
 const cors =require('cors');
 const { json } =require('body-parser');
 const app = express();
-
 const fs = require('fs');
 const { finished } = require('stream/promises');
 const http = require('http');
-const {graphqlUploadExpress,GraphQlUpload}=require('graphql-upload-minimal');
-//const { PubSub } = require('graphql-subscriptions');
-//const pubsub = new PubSub();
+const {graphqlUploadExpress}=require('graphql-upload-minimal');
 app.use(function (req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
@@ -57,10 +50,10 @@ const typeDefs = `#graphql
     UploadFile(_File:Upload): Result
   }
 `;
-
+//upload file function to write file to disk
 const uploadFile = async function (file) {
     try {
-        console.log("abc",file);
+         
         const {
             createReadStream,
             filename,
@@ -77,7 +70,7 @@ const uploadFile = async function (file) {
         let writeStream = await fs.createWriteStream(serverFile);
         await stream.pipe(writeStream);
         await finished(writeStream);
-        return _fileName;//{ "File_Name":_fileName, "File_Path":serverFile, "Gallery_ID":Gallery_ID };
+        return _fileName;
     } catch (err) {
         console.log(err);
         throw err;
@@ -98,10 +91,8 @@ const resolvers = {
                     let _fileName = await uploadFile(_File.file);
                     return { Message: _fileName };
                 } catch (ex) { console.log(ex); throw ex }
-
-            }
-
-            return { Message: "hhf" };
+            } 
+            return { Message: "some error occured" };
         }
     }
 };
@@ -110,15 +101,7 @@ app.use(function (req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
   next();
-});
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use(express.static(path.join(__dirname, 'uploads')));
-
-
-//new ApolloServer({ schema, context, uploads: false })
-
-
-//app.use(graphqlUploadExpress({ maxFileSize: 10000, maxFiles: 10 }));
+}); 
 const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -127,33 +110,14 @@ const server = new ApolloServer({
         credentials: true
     },
     csrfPrevention: false,
-  //schema,
-  //   playground: {
-  //     subscriptionEndpoint: 'wss://localhost:30300/api'
-  // },
-//   introspection:true,
-//   subscriptions: {
-//     path: '/graphql',
-//     keepAlive: 9000,
-//     onConnect: (connParams, webSocket, context) => {
-//       console.log('CLIENT CONNECTED');
-//       console.log({ connParams });
-//     },
-//     onDisconnect: (webSocket, context) => {
-//       console.log('CLIENT DISCONNECTED')
-//     }
-//   },
-//   context: auth
 });
-//await 
+ 
  server.start().then(res => {
 app.use(
   '/graphql',
   cors({origin:"*"}),
   json(),
-  expressMiddleware(server, {
-    //context: auth,//async ({ req }) => ({ token: req.headers.token }),
-  }),
+  expressMiddleware(server, {}),
 );
 
 const httpServer = http.createServer(app);
@@ -161,11 +125,10 @@ const httpServer = http.createServer(app);
 
 //await new Promise((resolve) =>
 httpServer.listen(4100, () => {
-  console.log("🚀 Server is good to go @  5000/graphql");
-});//.setTimeout(1000 * 60 * 200);
+  console.log("🚀 Server is good to go @  4100/graphql");
+}); 
 
-});
-//for subscriptions 
+}); 
 
 
 
