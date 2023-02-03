@@ -1,21 +1,20 @@
-// import { ApolloServer } from '@apollo/server';
-// import { startStandaloneServer } from '@apollo/server/standalone';
-//const express = require('express');
+const express = require('express');
 const { ApolloServer } = require('@apollo/server');
-const { startStandaloneServer } = require('@apollo/server/standalone');
-//const app = express();
-const http = require('http');
+const { expressMiddleware }  = require('@apollo/server/express4'); 
 const path = require('path');
-//const { FileUpload //GraphQLUpload,// graphqlUploadExpress, // A Koa implementation is also exported
-//} = require('graphql-upload');
-//const { GraphQLUpload } = require('graphql-upload');
-// app.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     next();
-// });
-//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-//app.use(express.static(path.join(__dirname, '/')));
+const cors =require('cors');
+const { json } =require('body-parser');
+const app = express();
+const fs = require('fs');
+const { finished } = require('stream/promises');
+const http = require('http');
+const {graphqlUploadExpress}=require('graphql-upload-minimal');
+app.use(function (req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+  });
+  app.use(graphqlUploadExpress());
 const books = [
     {
         title: 'The Awakening',
@@ -51,10 +50,10 @@ const typeDefs = `#graphql
     UploadFile(_File:Upload): Result
   }
 `;
-
+//upload file function to write file to disk
 const uploadFile = async function (file) {
     try {
-
+         
         const {
             createReadStream,
             filename,
@@ -65,13 +64,13 @@ const uploadFile = async function (file) {
         let { ext, name } = path.parse(filename);
         let _fileName = `${Date.now()}${ext}`;
         let serverFile = path.join(
-            __dirname, `../uploads/${_fileName}`
+            __dirname, `./${_fileName}`
         );
         serverFile = serverFile.replace(' ', '_');
         let writeStream = await fs.createWriteStream(serverFile);
         await stream.pipe(writeStream);
         await finished(writeStream);
-        return _fileName;//{ "File_Name":_fileName, "File_Path":serverFile, "Gallery_ID":Gallery_ID };
+        return _fileName;
     } catch (err) {
         console.log(err);
         throw err;
@@ -86,56 +85,51 @@ const resolvers = {
     },
     Mutation: {
         UploadFile: async (root, { _File }, req) => {
-            console.log({ _File });
+            console.log( _File );
             if (_File) {
                 try {
-                    let _fileName = "sasa";//await uploadFile(_File);
+                    let _fileName = await uploadFile(_File.file);
                     return { Message: _fileName };
-                } catch (ex) { console.log("ex"); throw ex }
-
-            }
-
-            return { Message: "hhf" };
+                } catch (ex) { console.log(ex); throw ex }
+            } 
+            return { Message: "some error occured" };
         }
     }
 };
 
-
-// The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+}); 
 const server = new ApolloServer({
+    typeDefs,
+    resolvers,
     cors: {
         origin: '*',			// <- allow request from all domains
         credentials: true
     },
     csrfPrevention: false,
-    typeDefs,
-    resolvers,
 });
-// server.applyMiddleware({
-//     app,
-//     path: '/graphql'
-// });
-//app.use(
-//'/graphql',
-// cors({ origin: ['https://www.your-app.example', 'https://studio.apollographql.com'] }),
-//json(),
-//expressMiddleware(server),
-//);
+ 
+ server.start().then(res => {
+app.use(
+  '/graphql',
+  cors({origin:"*"}),
+  json(),
+  expressMiddleware(server, {}),
+);
 
-//const httpServer = http.createServer(app);
+const httpServer = http.createServer(app);
 //server.installSubscriptionHandlers(httpServer);
 
-// httpServer.listen(4100, () => {
-//   console.log("🚀 Server is good to go @  4100/graphql");
-// }).setTimeout(1000 * 60 * 200);
-// Passing an ApolloServer instance to the `startStandaloneServer` function:
-//  1. creates an Express app
-//  2. installs your ApolloServer instance as middleware
-//  3. prepares your app to handle incoming requests
-//app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-const { url } = startStandaloneServer(server, {
-    listen: { port: 4100 },
-});
+//await new Promise((resolve) =>
+httpServer.listen(4100, () => {
+  console.log("🚀 Server is good to go @  4100/graphql");
+}); 
 
-console.log(`🚀  Server ready at: ${url}`);
+}); 
+
+
+
+ 
